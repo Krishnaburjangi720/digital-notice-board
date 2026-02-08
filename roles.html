@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Notice Board | Select Role</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Core CSS -->
+    <link rel="stylesheet" href="assets/css/style.css">
+
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            --accent-glow: #3b82f6;
+            --text-white: #ffffff;
+            --glass-panel: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --card-hover: rgba(59, 130, 246, 0.15);
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text-white);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* --- Floating Background Icons --- */
+        .bg-icons {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .bg-icon {
+            position: absolute;
+            color: rgba(255, 255, 255, 0.03);
+            animation: float 20s infinite linear;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0) rotate(0deg);
+            }
+
+            50% {
+                transform: translateY(-20px) rotate(10deg);
+            }
+
+            100% {
+                transform: translateY(0) rotate(0deg);
+            }
+        }
+
+        /* --- Main Layout --- */
+        .container {
+            z-index: 10;
+            position: relative;
+            width: 100%;
+            max-width: 1400px;
+            /* Wider for linear layout */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-height: 100vh;
+            /* Center vertically */
+        }
+
+        .hero-section {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        /* ... Hero styles ... */
+
+        /* --- Linear Card Layout --- */
+        .role-grid {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            padding: 0 1rem;
+            flex-wrap: wrap;
+        }
+
+        .role-card {
+            flex: 1;
+            min-width: 200px;
+            max-width: 280px;
+            /* ... existing glass styles ... */
+            background: var(--glass-panel);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 2rem 1.5rem;
+            text-align: center;
+            text-decoration: none;
+            color: white;
+            transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .role-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.05) 0%, transparent 60%);
+            opacity: 0;
+            transition: opacity 0.4s;
+        }
+
+        .role-card:hover {
+            transform: translateY(-10px);
+            border-color: rgba(59, 130, 246, 0.5);
+            background: var(--card-hover);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .role-card:hover::before {
+            opacity: 1;
+        }
+
+        .role-icon {
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+            color: var(--accent-glow);
+            transition: transform 0.4s;
+            display: inline-block;
+        }
+
+        .role-card:hover .role-icon {
+            transform: scale(1.2) rotate(5deg);
+        }
+
+        .role-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.5px;
+        }
+
+        .role-desc {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            line-height: 1.5;
+        }
+
+        /* --- Calendar Trigger --- */
+        .cal-trigger {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            backdrop-filter: blur(5px);
+            transition: all 0.3s;
+            z-index: 100;
+            color: white;
+        }
+
+        .cal-trigger:hover {
+            background: var(--accent-glow);
+            border-color: var(--accent-glow);
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+            transform: rotate(15deg);
+        }
+
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2.5rem;
+            }
+
+            body {
+                overflow-y: auto;
+                display: block;
+                padding-top: 4rem;
+            }
+
+            .container {
+                padding-bottom: 4rem;
+            }
+        }
+
+
+        /* --- Ticker --- */
+        .ticker-wrap {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid var(--glass-border);
+            height: 50px;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            z-index: 90;
+        }
+
+        .ticker {
+            display: inline-block;
+            white-space: nowrap;
+            padding-left: 100%;
+            animation: ticker 30s linear infinite;
+            color: var(--text-main);
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        @keyframes ticker {
+            0% {
+                transform: translate3d(0, 0, 0);
+            }
+
+            100% {
+                transform: translate3d(-100%, 0, 0);
+            }
+        }
+
+        body {
+            padding-bottom: 50px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Background Icons -->
+    <div class="bg-icons">
+        <i class="fa-solid fa-atom bg-icon" style="top: 10%; left: 10%; font-size: 8rem; opacity: 0.05;"></i>
+        <i class="fa-solid fa-graduation-cap bg-icon"
+            style="top: 20%; right: 15%; font-size: 10rem; opacity: 0.03; animation-delay: 2s;"></i>
+        <i class="fa-solid fa-microscope bg-icon"
+            style="bottom: 15%; left: 20%; font-size: 6rem; opacity: 0.04; animation-delay: 4s;"></i>
+        <i class="fa-solid fa-dna bg-icon"
+            style="bottom: 25%; right: 10%; font-size: 7rem; opacity: 0.05; animation-delay: 1s;"></i>
+        <i class="fa-solid fa-book-open bg-icon"
+            style="top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 15rem; opacity: 0.02;"></i>
+        <i class="fa-solid fa-globe bg-icon"
+            style="top: 15%; left: 40%; font-size: 4rem; opacity: 0.04; animation-delay: 3s;"></i>
+    </div>
+
+    <!-- Back Button -->
+    <a href="index.html" class="cal-trigger" style="left: 2rem; right: auto;" title="Back to Home">
+        <i class="fa-solid fa-arrow-left fa-lg"></i>
+    </a>
+
+    <div class="cal-trigger" onclick="openCalendar()" title="View Event Calendar">
+        <i class="fa-regular fa-calendar-alt fa-lg"></i>
+    </div>
+
+    <div class="container">
+        <div class="hero-section">
+            <div class="hero-icon">
+                <i class="fa-solid fa-layer-group"></i>
+            </div>
+            <h1 class="hero-title">Smart Campus</h1>
+            <p class="hero-subtitle">Digital Notice Board & Event Management System</p>
+        </div>
+
+        <div class="role-grid">
+            <!-- Admin -->
+            <a href="admin/login.html" class="role-card">
+                <i class="fa-solid fa-user-shield role-icon"></i>
+                <h3 class="role-title">Administrator</h3>
+                <p class="role-desc">System control, notice approval, and analytics dashboard.</p>
+            </a>
+
+            <!-- Faculty -->
+            <a href="faculty/login.html" class="role-card">
+                <i class="fa-solid fa-chalkboard-user role-icon"></i>
+                <h3 class="role-title">Faculty</h3>
+                <p class="role-desc">Manage departmental events and academic updates.</p>
+            </a>
+
+            <!-- Student -->
+            <a href="student/login.html" class="role-card">
+                <i class="fa-solid fa-graduation-cap role-icon"></i>
+                <h3 class="role-title">Student</h3>
+                <p class="role-desc">Access personal feed, exam schedules, and notices.</p>
+            </a>
+
+            <!-- Public -->
+            <a href="public/index.html" class="role-card">
+                <i class="fa-solid fa-globe role-icon"></i>
+                <h3 class="role-title">Public View</h3>
+                <p class="role-desc">Live digital signage mode for campus displays.</p>
+            </a>
+        </div>
+
+        <!-- About Section -->
+
+    </div>
+    </div>
+
+    <!-- Scrolling Ticker -->
+    <div class="ticker-wrap">
+        <div class="ticker">
+            📢 Welcome to the Digital Notice Board & Event Calendar — A centralized platform for college notices and
+            events &nbsp;&nbsp;|&nbsp;&nbsp; 📅 Stay updated with academic schedules, workshops, exams, and campus
+            activities &nbsp;&nbsp;|&nbsp;&nbsp; 🎓
+        </div>
+    </div>
+
+    <!-- Calendar Modal Container -->
+    <div id="calendar-overlay" class="modal-overlay">
+        <div class="calendar-modal">
+            <div class="calendar-header">
+                <h2 style="color: var(--text-main);">Campus Calendar</h2>
+                <button class="btn btn-outline btn-sm" onclick="closeCalendar()"><i
+                        class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="calendar-root"></div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="assets/js/data.js"></script>
+    <script src="assets/js/calendar.js"></script>
+    <script>
+        function openCalendar() {
+            document.getElementById('calendar-overlay').classList.add('active');
+            window.initCalendar('calendar-root');
+        }
+
+        function closeCalendar() {
+            document.getElementById('calendar-overlay').classList.remove('active');
+        }
+
+        // Close on outside click
+        document.getElementById('calendar-overlay').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('calendar-overlay')) {
+                closeCalendar();
+            }
+        });
+    </script>
+</body>
+
+</html>
