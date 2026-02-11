@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faculty Dashboard | Digital Notice Board</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+
+<body>
+    <header class="main-header">
+        <div class="container header-content">
+            <div class="brand">
+                <i class="fa-solid fa-chalkboard-user"></i> Faculty Dashboard
+            </div>
+            <nav class="nav-links">
+                <span class="nav-item active">My Notices</span>
+                <span class="nav-item" onclick="openCalendar()">Calendar</span>
+                <span class="nav-item" style="color: var(--danger-color);" onclick="logout()">Logout</span>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container" style="margin-top: 2rem;">
+
+        <div style="display: flex; justify-content: space-between; align-items:center; margin-bottom: 2rem;">
+            <div>
+                <h2 id="welcome-msg">Welcome, Faculty</h2>
+                <p style="color: var(--text-muted);">Manage events for your department.</p>
+            </div>
+            <button class="btn btn-primary" onclick="openModal('create-modal', false)"><i class="fa-solid fa-plus"></i>
+                &nbsp; Post New
+                Event</button>
+        </div>
+
+        <div class="grid" id="faculty-grid"
+            style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;">
+            <!-- Content -->
+        </div>
+
+    </div>
+
+    <!-- Create Modal -->
+    <div id="create-modal" class="modal-overlay">
+        <div class="calendar-modal" style="max-width: 600px;">
+            <div class="calendar-header">
+                <h3>Post Event</h3>
+                <button class="btn btn-outline btn-sm" onclick="closeModal('create-modal')"><i
+                        class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="create-form">
+                <div class="form-group">
+                    <label class="form-label">Title</label>
+                    <input type="text" id="title" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <textarea id="desc" class="form-control" rows="3" required></textarea>
+                </div>
+                <!-- Logic: Faculty can only post for their dept, but can choose category (student/public) -->
+                <div class="form-group">
+                    <label class="form-label">Target Audience</label>
+                    <select id="category" class="form-control">
+                        <option value="student">Students</option>
+                        <option value="faculty">Faculty Only</option>
+                    </select>
+                </div>
+                <div class="form-row" style="display:flex; gap:1rem;">
+                    <div class="form-group" style="flex:1;">
+                        <label class="form-label">Date</label>
+                        <input type="date" id="date" class="form-control" required>
+                    </div>
+                    <div class="form-group" style="flex:1;">
+                        <label class="form-label">Time</label>
+                        <input type="time" id="time" class="form-control" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Venue</label>
+                    <input type="text" id="venue" class="form-control" required>
+                </div>
+
+                <div class="form-group">
+                    <p style="font-size: 0.9rem; color: var(--text-muted);">* You are posting as <span id="dept-badge"
+                            class="badge badge-academic"></span> Department</p>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Publish Event</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Calendar Modal -->
+    <div id="calendar-overlay" class="modal-overlay">
+        <div class="calendar-modal">
+            <div class="calendar-header">
+                <h2>Campus Calendar</h2>
+                <button class="btn btn-outline btn-sm" onclick="closeModal('calendar-overlay')"><i
+                        class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="calendar-root"></div>
+        </div>
+    </div>
+
+    <script src="../assets/js/data.js"></script>
+    <script src="../assets/js/calendar.js"></script>
+    <script>
+        // Check Auth
+        document.addEventListener('DOMContentLoaded', () => {
+            const user = JSON.parse(localStorage.getItem('ag_current_user'));
+            if (!user || user.role !== 'faculty') {
+                window.location.href = 'login.html';
+            }
+
+            const welcomeMsg = document.getElementById('welcome-msg');
+            if (welcomeMsg) welcomeMsg.textContent = `Welcome, ${user.name}`;
+
+            const deptBadge = document.getElementById('dept-badge');
+            if (deptBadge) deptBadge.textContent = user.dept.toUpperCase();
+
+            // Store user globally for functions to access
+            window.currentUser = user;
+        });
+
+        // Listen for Firebase Updates
+        window.addEventListener('data-updated', () => {
+            renderFacultyEvents();
+        });
+
+        // Global functions for onclick
+        window.renderFacultyEvents = function () {
+            const user = window.currentUser || JSON.parse(localStorage.getItem('ag_current_user'));
+            if (!user) return; // Wait for load
+
+            const container = document.getElementById('faculty-grid');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const events = DataManager.getEvents().filter(e => e.department === user.dept);
+
+            if (events.length === 0) {
+                container.innerHTML = '<p style="color:var(--text-muted)">No active events found for your department.</p>';
+                return;
+            }
+
+            events.forEach((e, index) => {
+                const card = document.createElement('div');
+                const delay = index * 100;
+                card.style.animationDelay = `${delay}ms`;
+
+                card.className = 'card animate-entry hover-lift';
+
+                card.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.5rem;">
+                        <span class="badge badge-event">${e.category}</span>
+                        <div>
+                            <button class="btn btn-outline" style="font-size:0.8rem; padding: 0.2rem 0.6rem; margin-right:0.5rem;" onclick="editEvent(${e.id})"><i class="fa-solid fa-pen"></i></button>
+                            <button class="btn btn-danger" onclick="deleteEvent(${e.id})" style="font-size:0.8rem; padding: 0.2rem 0.6rem;"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>
+                    <h3 style="margin-bottom:0.5rem;">${e.title}</h3>
+                    <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom:0.8rem;">
+                         <i class="fa-regular fa-calendar"></i> ${DataManager.formatDate(e.date)} &bull; ${DataManager.formatTime(e.time)}
+                    </div>
+                    <p style="color:var(--text-secondary); margin-bottom: 0.5rem;">${e.desc || 'No details provided.'}</p>
+                    <div style="font-size:0.9rem; color:var(--primary-color);">
+                        <i class="fa-solid fa-location-dot"></i> ${e.venue}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        window.deleteEvent = async function (id) {
+            if (confirm('Revoke this event?')) {
+                await DataManager.deleteEvent(id);
+                // Render called by listener
+            }
+        }
+
+        window.currentEditEventId = null;
+
+        window.editEvent = function (id) {
+            const event = DataManager.getEvents().find(e => e.id === id);
+            if (!event) return;
+
+            window.currentEditEventId = id;
+            document.querySelector('.calendar-header h3').textContent = "Edit Event";
+
+            document.getElementById('title').value = event.title;
+            document.getElementById('desc').value = event.desc;
+            document.getElementById('category').value = event.category;
+            document.getElementById('date').value = event.date;
+            document.getElementById('time').value = event.time;
+            document.getElementById('venue').value = event.venue;
+
+            openModal('create-modal', true);
+        }
+
+        window.openModal = function (id = 'create-modal', isEdit = false) {
+            document.getElementById(id).classList.add('active');
+            if (id === 'create-modal' && !isEdit) {
+                document.getElementById('create-form').reset();
+                window.currentEditEventId = null;
+                document.querySelector('.calendar-header h3').textContent = "Post Event";
+            }
+        }
+
+        window.openCalendar = function () {
+            document.getElementById('calendar-overlay').classList.add('active');
+            window.initCalendar('calendar-root');
+        }
+
+        window.closeModal = function (id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        window.logout = function () {
+            localStorage.removeItem('ag_current_user');
+            window.location.href = '../index.html';
+        }
+
+        // Form Listener
+        const createForm = document.getElementById('create-form');
+        if (createForm) {
+            createForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const user = window.currentUser || JSON.parse(localStorage.getItem('ag_current_user'));
+
+                const newEvent = {
+                    title: document.getElementById('title').value,
+                    desc: document.getElementById('desc').value,
+                    category: document.getElementById('category').value,
+                    department: user.dept,
+                    date: document.getElementById('date').value,
+                    time: document.getElementById('time').value,
+                    venue: document.getElementById('venue').value,
+                    urgent: false
+                };
+
+                if (window.currentEditEventId) {
+                    newEvent.id = window.currentEditEventId;
+                    await DataManager.updateEvent(newEvent);
+                } else {
+                    await DataManager.addEvent(newEvent);
+                }
+
+                closeModal('create-modal');
+                e.target.reset();
+                // Render called by listener
+            });
+        }
+    </script>
+</body>
+
+</html>
