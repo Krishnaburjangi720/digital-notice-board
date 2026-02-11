@@ -1,1 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
 
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | Digital Notice Board</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+
+<body>
+    <header class="main-header">
+        <div class="container header-content">
+            <div class="brand">
+                <i class="fa-solid fa-user-shield"></i> Admin Dashboard
+            </div>
+            <nav class="nav-links">
+                <span class="nav-item active" onclick="switchTab('notices', event)">Notices</span>
+                <span class="nav-item" onclick="switchTab('events', event)">Events</span>
+                <span class="nav-item" onclick="switchTab('analytics', event)">Analytics</span>
+                <span class="nav-item" onclick="openCalendar()">Calendar</span>
+                <span class="nav-item" style="color: var(--danger-color);" onclick="logout()">Logout</span>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container" style="margin-top: 2rem;">
+
+        <!-- Controls -->
+        <div id="main-controls"
+            style="display: flex; justify-content: space-between; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+            <div style="display: flex; gap: 1rem; flex: 1;">
+                <input type="text" class="form-control" id="search" placeholder="Search title..." oninput="renderAll()"
+                    style="max-width: 300px;">
+                <select class="form-control" id="filter-dept" onchange="renderAll()" style="max-width: 200px;">
+                    <option value="all">All Departments</option>
+                    <option value="cs">Computer Science</option>
+                    <option value="admin">Administration</option>
+                    <option value="exam">Examination</option>
+                </select>
+            </div>
+            <button class="btn btn-primary" onclick="openModal('item-modal', false)"><i class="fa-solid fa-plus"></i>
+                &nbsp;
+                New Item</button>
+        </div>
+
+        <!-- Notices Grid -->
+        <section id="tab-notices">
+            <h2 style="margin-bottom: 1rem;">Active Notices</h2>
+            <div class="grid" id="notices-grid"
+                style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;">
+                <!-- JS Populated -->
+            </div>
+        </section>
+
+        <!-- Events Grid -->
+        <section id="tab-events" style="display: none;">
+            <h2 style="margin-bottom: 1rem;">Upcoming Events</h2>
+            <div class="grid" id="events-grid"
+                style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;">
+                <!-- JS Populated -->
+            </div>
+        </section>
+
+        <!-- Analytics Section -->
+        <section id="tab-analytics" style="display: none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 2rem;">
+                <h2>System Analytics</h2>
+                <button class="btn btn-outline" onclick="exportData()"><i class="fa-solid fa-download"></i> Backup
+                    Data</button>
+            </div>
+
+            <div
+                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 3rem;">
+                <!-- Stat Cards -->
+                <div class="card" style="text-align: center;">
+                    <h3 style="color:var(--text-muted); font-size: 1rem;">Total Items</h3>
+                    <div style="font-size: 2.5rem; font-weight: 700; color: var(--primary-color);" id="stat-total">0
+                    </div>
+                </div>
+                <div class="card" style="text-align: center;">
+                    <h3 style="color:var(--text-muted); font-size: 1rem;">Notices</h3>
+                    <div style="font-size: 2.5rem; font-weight: 700; color: var(--accent-color);" id="stat-notices">0
+                    </div>
+                </div>
+                <div class="card" style="text-align: center;">
+                    <h3 style="color:var(--text-muted); font-size: 1rem;">Events</h3>
+                    <div style="font-size: 2.5rem; font-weight: 700; color: var(--success-color);" id="stat-events">0
+                    </div>
+                </div>
+                <div class="card" style="text-align: center;">
+                    <h3 style="color:var(--text-muted); font-size: 1rem;">Urgent</h3>
+                    <div style="font-size: 2.5rem; font-weight: 700; color: var(--danger-color);" id="stat-urgent">0
+                    </div>
+                </div>
+            </div>
+
+            <!-- Simple Chart -->
+            <div class="card">
+                <h3>Activity by Department</h3>
+                <div id="chart-container" style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
+                    <!-- JS Populated Bars -->
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- Create/Edit Modal -->
+    <div id="item-modal" class="modal-overlay">
+        <div class="calendar-modal" style="max-width: 600px;">
+            <div class="calendar-header">
+                <h3 id="modal-title">Create New</h3>
+                <button class="btn btn-outline btn-sm" onclick="closeModal('item-modal')"><i
+                        class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="item-form">
+                <div class="form-group">
+                    <label class="form-label">Type</label>
+                    <select id="item-type" class="form-control" onchange="toggleEventFields()">
+                        <option value="notice">Notice</option>
+                        <option value="event">Event</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Title</label>
+                    <input type="text" id="title" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <textarea id="desc" class="form-control" rows="3" required></textarea>
+                </div>
+                <div style="display: flex; gap: 1rem;">
+                    <div class="form-group" style="flex:1;">
+                        <label class="form-label">Category</label>
+                        <select id="category" class="form-control">
+                            <option value="academic">Academic</option>
+                            <option value="student">Student</option>
+                            <option value="faculty">Faculty</option>
+                            <option value="public">Public</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex:1;">
+                        <label class="form-label">Department</label>
+                        <select id="department" class="form-control">
+                            <option value="all">All / General</option>
+                            <option value="cs">Computer Science</option>
+                            <option value="admin">Administration</option>
+                            <option value="exam">Examination</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Date</label>
+                    <input type="date" id="date" class="form-control" required>
+                </div>
+
+                <!-- Event Specific -->
+                <div id="event-fields" style="display:none; gap: 1rem;">
+                    <div class="form-group" style="flex:1;">
+                        <label class="form-label">Time</label>
+                        <input type="time" id="time" class="form-control">
+                    </div>
+                    <div class="form-group" style="flex:1;">
+                        <label class="form-label">Venue</label>
+                        <input type="text" id="venue" class="form-control">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label style="display:flex; align-items:center; gap: 0.5rem; cursor:pointer;">
+                        <input type="checkbox" id="urgent">
+                        Mark as Urgent / High Priority
+                    </label>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Save</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Calendar Modal -->
+    <div id="calendar-overlay" class="modal-overlay">
+        <div class="calendar-modal">
+            <div class="calendar-header">
+                <h2>Campus Calendar</h2>
+                <button class="btn btn-outline btn-sm" onclick="closeModal('calendar-overlay')"><i
+                        class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="calendar-root"></div>
+        </div>
+    </div>
+
+    <script src="../assets/js/data.js"></script>
+    <script src="../assets/js/calendar.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Check Auth
+            const user = JSON.parse(localStorage.getItem('ag_current_user'));
+            if (!user || user.role !== 'admin') {
+                window.location.href = 'login.html';
+                // throw new Error("Redirecting..."); // Removed to avoid console noise
+                return;
+            }
+
+            // Initial UI Setup (Wait for data event for content)
+            const userNameDisplay = document.getElementById('admin-name');
+            if (userNameDisplay) userNameDisplay.textContent = user.name;
+        });
+
+        // Listen for Firebase Data Updates
+        window.addEventListener('data-updated', () => {
+            renderAll();
+        });
+
+        // --- Render Logic ---
+        window.renderAll = function () {
+            // ... existing render calls
+            renderNotices();
+            renderEvents();
+            renderAnalytics();
+        }
+
+        function renderNotices() {
+            // ... (keep existing renderNotices logic, but ensure it's robust)
+            const container = document.getElementById('notices-grid');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const searchInput = document.getElementById('search');
+            const deptInput = document.getElementById('filter-dept');
+
+            const searchVal = searchInput ? searchInput.value.toLowerCase() : '';
+            const deptVal = deptInput ? deptInput.value : 'all';
+
+            const notices = DataManager.getNotices().filter(n => {
+                const titleMatch = n.title.toLowerCase().includes(searchVal);
+                const descMatch = n.desc ? n.desc.toLowerCase().includes(searchVal) : false;
+                const deptMatch = deptVal === 'all' || n.department === deptVal;
+                return (titleMatch || descMatch) && deptMatch;
+            });
+            // ... (rest of renderNotices)
+            notices.forEach((n, index) => {
+                const card = document.createElement('div');
+                const delay = (index * 100); // 100ms stagger
+                card.style.animationDelay = `${delay}ms`; // Dynamic inline delay
+
+                // Add classes
+                card.className = `card animate-entry hover-lift ${n.urgent ? 'pulse-urgent' : ''}`;
+
+                card.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.5rem;">
+                        <span class="badge badge-${n.urgent ? 'urgent' : 'academic'}">${n.urgent ? 'URGENT' : n.category}</span>
+                        <div>
+                            <button class="btn btn-outline" style="padding:0.25rem 0.5rem; font-size:0.8rem; margin-right:0.5rem;" onclick="editNotice(${n.id})"><i class="fa-solid fa-pen"></i></button>
+                            <button class="btn btn-danger" style="padding:0.25rem 0.5rem; font-size:0.8rem;" onclick="deleteNotice(${n.id})"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>
+                    <h3 style="margin-bottom:0.5rem;">${n.title}</h3>
+                    <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom:1rem;">
+                        <i class="fa-regular fa-calendar"></i> ${DataManager.formatDate(n.date)} &bull; ${(n.department || 'General').toUpperCase()}
+                    </div>
+                    <p style="color:var(--text-secondary); font-size:0.95rem;">${n.desc}</p>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function renderEvents() {
+            const container = document.getElementById('events-grid');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const searchInput = document.getElementById('search');
+            const deptInput = document.getElementById('filter-dept');
+
+            const searchVal = searchInput ? searchInput.value.toLowerCase() : '';
+            const deptVal = deptInput ? deptInput.value : 'all';
+
+            const events = DataManager.getEvents().filter(e => {
+                const titleMatch = e.title.toLowerCase().includes(searchVal);
+                const deptMatch = deptVal === 'all' || e.department === deptVal;
+                return titleMatch && deptMatch;
+            });
+
+            events.forEach((e, index) => {
+                const card = document.createElement('div');
+                const delay = (index * 100) + 200; // Slight offset from notices if mixed, or just staggering
+                card.style.animationDelay = `${delay}ms`;
+
+                card.className = 'card animate-entry hover-lift';
+                card.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.5rem;">
+                        <span class="badge badge-event">${e.category}</span>
+                        <div>
+                            <button class="btn btn-outline" style="padding:0.25rem 0.5rem; font-size:0.8rem; margin-right:0.5rem;" onclick="editEvent(${e.id})"><i class="fa-solid fa-pen"></i></button>
+                            <button class="btn btn-danger" style="padding:0.25rem 0.5rem; font-size:0.8rem;" onclick="deleteEvent(${e.id})"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>
+                    <h3 style="margin-bottom:0.5rem;">${e.title}</h3>
+                    <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom:0.5rem;">
+                        <i class="fa-regular fa-calendar"></i> ${DataManager.formatDate(e.date)} &bull; ${DataManager.formatTime(e.time)}
+                    </div>
+                    <div style="font-size:0.9rem; color:var(--primary-color); font-weight:500;">
+                        <i class="fa-solid fa-location-dot"></i> ${e.venue}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function renderAnalytics() {
+            const stats = DataManager.getAnalytics();
+
+            // Cards
+            const totalEl = document.getElementById('stat-total');
+            if (totalEl) totalEl.textContent = stats.totalItems;
+
+            const noticesEl = document.getElementById('stat-notices');
+            if (noticesEl) noticesEl.textContent = stats.noticesCount;
+
+            const eventsEl = document.getElementById('stat-events');
+            if (eventsEl) eventsEl.textContent = stats.eventsCount;
+
+            const urgentEl = document.getElementById('stat-urgent');
+            if (urgentEl) urgentEl.textContent = stats.urgentCount;
+
+            // Chart
+            const chart = document.getElementById('chart-container');
+            if (!chart) return;
+            chart.innerHTML = '';
+
+            Object.entries(stats.deptCounts).forEach(([dept, count]) => {
+                const percent = Math.min((count / stats.totalItems) * 100, 100);
+                const bar = document.createElement('div');
+                bar.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; margin-bottom:0.3rem;">
+                        <span style="font-weight:600; text-transform:uppercase;">${dept}</span>
+                        <span>${count}</span>
+                    </div>
+                    <div style="width:100%; background:#f1f5f9; border-radius:4px; height:10px; overflow:hidden;">
+                        <div style="width:${percent}%; background:var(--primary-color); height:100%;"></div>
+                    </div>
+                `;
+                chart.appendChild(bar);
+            });
+        }
+
+        // --- Global Exports for HTML OnClick ---
+        window.switchTab = function (tab, event) {
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            if (event && event.target) event.target.classList.add('active');
+
+            ['notices', 'events', 'analytics'].forEach(t => {
+                const el = document.getElementById(`tab-${t}`);
+                if (el) el.style.display = 'none';
+            });
+            const tabEl = document.getElementById(`tab-${tab}`);
+            if (tabEl) tabEl.style.display = 'block';
+
+            const controls = document.getElementById('main-controls');
+            if (controls) {
+                if (tab === 'analytics') controls.style.display = 'none';
+                else controls.style.display = 'flex';
+            }
+        }
+
+        window.toggleEventFields = function () {
+            const type = document.getElementById('item-type').value;
+            const eventFields = document.getElementById('event-fields');
+            if (eventFields) eventFields.style.display = type === 'event' ? 'flex' : 'none';
+        }
+
+        window.exportData = function () {
+            const url = DataManager.exportJSON();
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `smart_campus_backup_${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+        }
+
+        window.deleteNotice = function (id) {
+            if (!confirm('Delete this notice?')) return;
+            DataManager.deleteNotice(id);
+            renderAll();
+        }
+
+        window.deleteEvent = function (id) {
+            if (!confirm('Delete this event?')) return;
+            DataManager.deleteEvent(id);
+            renderAll();
+        }
+
+        window.currentEditId = null;
+
+        window.editNotice = function (id) {
+            const notice = DataManager.getNotices().find(n => n.id === id);
+            if (!notice) return;
+
+            window.currentEditId = id;
+            document.getElementById('modal-title').textContent = "Edit Notice";
+            document.getElementById('item-type').value = 'notice';
+            document.getElementById('item-type').disabled = true; // Cannot change type while editing
+            toggleEventFields();
+
+            document.getElementById('title').value = notice.title;
+            document.getElementById('desc').value = notice.desc;
+            document.getElementById('category').value = notice.category;
+            document.getElementById('department').value = notice.department || 'all';
+            document.getElementById('date').value = notice.date;
+            document.getElementById('urgent').checked = notice.urgent;
+
+            openModal('item-modal', true);
+        }
+
+        window.editEvent = function (id) {
+            const event = DataManager.getEvents().find(e => e.id === id);
+            if (!event) return;
+
+            window.currentEditId = id;
+            document.getElementById('modal-title').textContent = "Edit Event";
+            document.getElementById('item-type').value = 'event';
+            document.getElementById('item-type').disabled = true;
+            toggleEventFields();
+
+            document.getElementById('title').value = event.title;
+            document.getElementById('desc').value = event.desc;
+            document.getElementById('category').value = event.category;
+            document.getElementById('department').value = event.department || 'all';
+            document.getElementById('date').value = event.date;
+            document.getElementById('urgent').checked = event.urgent;
+
+            // Event specific
+            document.getElementById('time').value = event.time;
+            document.getElementById('venue').value = event.venue;
+
+            openModal('item-modal', true);
+        }
+
+        window.openModal = function (id, isEdit = false) {
+            document.getElementById(id).classList.add('active');
+            if (id === 'item-modal') {
+                if (!isEdit) {
+                    // Reset for create
+                    document.getElementById('item-form').reset();
+                    window.currentEditId = null;
+                    document.getElementById('modal-title').textContent = "Create New";
+                    document.getElementById('item-type').disabled = false;
+                    const today = new Date().toISOString().split('T')[0];
+                    const dateEl = document.getElementById('date');
+                    if (dateEl) dateEl.value = today;
+                    toggleEventFields();
+                }
+            }
+        }
+
+        window.openCalendar = function () {
+            document.getElementById('calendar-overlay').classList.add('active');
+            window.initCalendar('calendar-root');
+        }
+
+        window.closeModal = function (id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        window.logout = function () {
+            localStorage.removeItem('ag_current_user');
+            window.location.href = '../index.html';
+        }
+
+        // --- Event Listeners ---
+        const itemForm = document.getElementById('item-form');
+        if (itemForm) {
+            itemForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const type = document.getElementById('item-type').value;
+
+                const item = {
+                    title: document.getElementById('title').value,
+                    category: document.getElementById('category').value,
+                    department: document.getElementById('department').value,
+                    date: document.getElementById('date').value,
+                    urgent: document.getElementById('urgent').checked,
+                    desc: document.getElementById('desc').value
+                };
+
+                if (type === 'notice') {
+                    if (window.currentEditId) {
+                        item.id = window.currentEditId;
+                        DataManager.updateNotice(item);
+                    } else {
+                        DataManager.addNotice(item);
+                    }
+                } else {
+                    item.time = document.getElementById('time').value;
+                    item.venue = document.getElementById('venue').value;
+                    if (window.currentEditId) {
+                        item.id = window.currentEditId;
+                        DataManager.updateEvent(item);
+                    } else {
+                        DataManager.addEvent(item);
+                    }
+                }
+
+                closeModal('item-modal');
+                e.target.reset();
+                renderAll();
+            });
+        }
+    </script>
+</body>
+
+</html>
