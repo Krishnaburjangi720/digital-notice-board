@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login | Digital Notice Board</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <style>
+        .back-link {
+            position: absolute;
+            top: 2rem;
+            left: 2rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+    <a href="../index.html" class="back-link"><i class="fa-solid fa-arrow-left"></i> Back to Home</a>
+
+    <div class="auth-container">
+        <div class="auth-card">
+            <div style="margin-bottom: 2rem;">
+                <i class="fa-solid fa-user-shield fa-3x" style="color: var(--primary-color);"></i>
+                <h2 style="margin-top: 1rem;">Admin Panel</h2>
+                <p style="color: var(--text-muted);">Secure Access Only</p>
+            </div>
+
+            <form id="login-form">
+                <div class="form-group">
+                    <label class="form-label">Username</label>
+                    <input type="text" class="form-control" id="username" placeholder="admin" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" class="form-control" id="password" placeholder="password" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Access Dashboard</button>
+            </form>
+
+            <p style="margin-top: 1.5rem; font-size: 0.9rem; color: var(--text-muted);">
+                New Administrator? <a href="register.html" style="color:var(--primary-color);">Register Here</a><br>
+                Default: admin / password
+            </p>
+        </div>
+    </div>
+
+    <script src="../assets/js/data.js"></script>
+    <script>
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const user = document.getElementById('username').value;
+            const pass = document.getElementById('password').value;
+            const btn = e.target.querySelector('button');
+            const originalText = btn.textContent;
+
+            btn.disabled = true;
+            btn.textContent = "Verifying...";
+
+            try {
+                const result = await DataManager.login(user, pass, 'admin');
+
+                if (result.success) {
+                    window.location.href = 'index.html';
+                } else {
+                    alert(result.message || 'Invalid Credentials');
+                    btn.disabled = false;
+                    btn.textContent = originalText;
+                }
+            } catch (error) {
+                console.error(error);
+                alert("Login Error: " + error.message);
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        });
+    </script>
+</body>
+
+</html>

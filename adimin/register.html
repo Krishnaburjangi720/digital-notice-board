@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Registration | Smart Campus</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <h2 style="text-align:center; margin-bottom:1.5rem;">Admin Sign Up</h2>
+            <form id="reg-form">
+                <div class="form-group">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" id="name" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Username</label>
+                    <input type="text" id="username" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" id="password" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%;">Register</button>
+            </form>
+            <p style="margin-top:1rem; text-align:center;">
+                Already have an account? <a href="login.html">Login here</a>
+            </p>
+        </div>
+    </div>
+    <script src="../assets/js/data.js"></script>
+    <script>
+        document.getElementById('reg-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const user = {
+                name: document.getElementById('name').value,
+                username: document.getElementById('username').value,
+                password: document.getElementById('password').value,
+                role: 'admin'
+            };
+
+            const btn = e.target.querySelector('button');
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = "Registering...";
+
+            try {
+                const res = await DataManager.register(user);
+                if (res.success) {
+                    alert("Registration Successful! Please Login.");
+                    window.location.href = 'login.html';
+                } else {
+                    alert(res.message || "Registration Failed");
+                    btn.disabled = false;
+                    btn.textContent = originalText;
+                }
+            } catch (error) {
+                console.error(error);
+                alert("Error: " + error.message);
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        });
+    </script>
+</body>
+
+</html>
