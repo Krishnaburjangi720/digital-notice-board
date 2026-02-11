@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard | Digital Notice Board</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+
+<body>
+    <header class="main-header">
+        <div class="container header-content">
+            <div class="brand">
+                <i class="fa-solid fa-graduation-cap"></i> Student Portal
+            </div>
+            <nav class="nav-links">
+                <span class="nav-item active" onclick="switchTab('notices')">Notices</span>
+                <span class="nav-item" onclick="switchTab('events')">Events</span>
+                <span class="nav-item" onclick="openCalendar()">Calendar</span>
+                <span class="nav-item" style="color: var(--danger-color);" onclick="logout()">Logout</span>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container" style="margin-top: 2rem;">
+
+        <div style="display: flex; justify-content: space-between; align-items:center; margin-bottom: 2rem;">
+            <div>
+                <h2 id="welcome-msg">Welcome, Student</h2>
+                <p style="color: var(--text-muted);">Your personalized campus feed.</p>
+            </div>
+            <div style="text-align: right;">
+                <span class="badge badge-academic" id="dept-badge"></span>
+            </div>
+        </div>
+
+        <!-- Filter -->
+        <div style="margin-bottom: 20px;">
+            <input type="text" id="search" class="form-control" placeholder="Search..." oninput="renderAll()"
+                style="max-width: 300px;">
+        </div>
+
+        <!-- Notices Grid -->
+        <section id="tab-notices">
+            <h3>Latest Notices</h3>
+            <div class="grid" id="notices-grid"
+                style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; margin-top: 1rem;">
+                <!-- JS Populated -->
+            </div>
+        </section>
+
+        <!-- Events Grid -->
+        <section id="tab-events" style="display: none;">
+            <h3>Upcoming Events</h3>
+            <div class="grid" id="events-grid"
+                style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; margin-top: 1rem;">
+                <!-- JS Populated -->
+            </div>
+        </section>
+
+    </div>
+
+    <!-- Calendar Modal -->
+    <div id="calendar-overlay" class="modal-overlay">
+        <div class="calendar-modal">
+            <div class="calendar-header">
+                <h2>Campus Calendar</h2>
+                <button class="btn btn-outline btn-sm" onclick="closeModal('calendar-overlay')"><i
+                        class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="calendar-root"></div>
+        </div>
+    </div>
+
+    <script src="../assets/js/data.js"></script>
+    <script src="../assets/js/calendar.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const user = JSON.parse(localStorage.getItem('ag_current_user'));
+            if (!user || user.role !== 'student') {
+                window.location.href = 'login.html';
+            }
+
+            const welcomeMsg = document.getElementById('welcome-msg');
+            if (welcomeMsg) welcomeMsg.textContent = `Welcome, ${user.name}`;
+
+            const deptBadge = document.getElementById('dept-badge');
+            if (deptBadge) deptBadge.textContent = (user.dept || 'General').toUpperCase();
+
+            window.currentUser = user; // Store globally
+        });
+
+        // Listen for Firebase Updates
+        window.addEventListener('data-updated', () => {
+            renderAll();
+        });
+
+        window.renderAll = function () {
+            renderNotices();
+            renderEvents();
+        }
+
+        function renderNotices() {
+            const container = document.getElementById('notices-grid');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const searchInput = document.getElementById('search');
+            const searchVal = searchInput ? searchInput.value.toLowerCase() : '';
+
+            const user = window.currentUser || JSON.parse(localStorage.getItem('ag_current_user'));
+
+            const notices = DataManager.getNotices().filter(n => {
+                const isRelevantDept = n.department === 'all' || n.department === (user ? user.dept : '');
+                const matchesSearch = n.title.toLowerCase().includes(searchVal);
+                return isRelevantDept && matchesSearch;
+            });
+
+            if (notices.length === 0) {
+                container.innerHTML = '<p style="color:var(--text-muted)">No active notices.</p>';
+                return;
+            }
+
+            notices.forEach((n, index) => {
+                const card = document.createElement('div');
+                const delay = index * 100;
+                card.style.animationDelay = `${delay}ms`;
+
+                card.className = `card animate-entry hover-lift ${n.urgent ? 'pulse-urgent' : ''}`;
+
+                card.innerHTML = `
+                   <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.5rem;">
+                        <span class="badge badge-${n.urgent ? 'urgent' : 'academic'}">${n.urgent ? 'URGENT' : n.category}</span>
+                    </div>
+                    <h3 style="margin-bottom:0.5rem;">${n.title}</h3>
+                    <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom:1rem;">
+                        <i class="fa-regular fa-calendar"></i> ${DataManager.formatDate(n.date)}
+                    </div>
+                    <p style="color:var(--text-secondary); font-size:0.95rem;">${n.desc}</p>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function renderEvents() {
+            const container = document.getElementById('events-grid');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const searchInput = document.getElementById('search');
+            const searchVal = searchInput ? searchInput.value.toLowerCase() : '';
+
+            const user = window.currentUser || JSON.parse(localStorage.getItem('ag_current_user'));
+
+            const events = DataManager.getEvents().filter(e => {
+                const isRelevantCat = ['student', 'public', 'academic'].includes(e.category);
+                const isRelevantDept = e.department === 'all' || e.department === (user ? user.dept : '') || e.department === 'admin';
+                const matchesSearch = e.title.toLowerCase().includes(searchVal);
+
+                return (isRelevantCat || isRelevantDept) && matchesSearch;
+            });
+
+            if (events.length === 0) {
+                container.innerHTML = '<p style="color:var(--text-muted)">No upcoming events.</p>';
+                return;
+            }
+
+            events.forEach((e, index) => {
+                const card = document.createElement('div');
+                const delay = index * 100;
+                card.style.animationDelay = `${delay}ms`;
+
+                card.className = 'card animate-entry hover-lift';
+
+                card.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.5rem;">
+                        <span class="badge badge-event">${e.category}</span>
+                    </div>
+                    <h3 style="margin-bottom:0.5rem;">${e.title}</h3>
+                    <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom:0.5rem;">
+                        <i class="fa-regular fa-calendar"></i> ${DataManager.formatDate(e.date)} &bull; ${DataManager.formatTime(e.time)}
+                    </div>
+                    <div style="font-size:0.9rem; color:var(--primary-color); font-weight:500;">
+                        <i class="fa-solid fa-location-dot"></i> ${e.venue}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        window.switchTab = function (tab) {
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            if (event && event.target) event.target.classList.add('active');
+
+            const noticesTab = document.getElementById('tab-notices');
+            const eventsTab = document.getElementById('tab-events');
+
+            if (tab === 'notices') {
+                if (noticesTab) noticesTab.style.display = 'block';
+                if (eventsTab) eventsTab.style.display = 'none';
+            } else {
+                if (noticesTab) noticesTab.style.display = 'none';
+                if (eventsTab) eventsTab.style.display = 'block';
+            }
+        }
+
+        window.openCalendar = function () {
+            document.getElementById('calendar-overlay').classList.add('active');
+            window.initCalendar('calendar-root');
+        }
+
+        window.closeModal = function (id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        window.logout = function () {
+            localStorage.removeItem('ag_current_user');
+            window.location.href = '../index.html';
+        }
+
+    </script>
+</body>
+
+</html>
